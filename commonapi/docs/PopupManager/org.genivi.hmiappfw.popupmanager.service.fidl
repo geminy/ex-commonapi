@@ -1,0 +1,380 @@
+/* ------------------------------------------------------------------------
+   (C) 2013 Fujitsu Semiconductor Embedded Solutions Austria GmbH (FEAT)
+
+   Fujitsu Semiconductor Embedded Solutions Austria GmbH (FEAT)
+   Semmelweisstr. 34                             Landline +43 (732) 90305-0
+   4020 Linz, Austria                            Fax    +43 (732) 90305-100
+   mailto://cgistudio@at.fujitsu.com             http://www.cgistudio.at
+   ------------------------------------------------------------------------
+   This source code is subject to the terms of the
+   Mozilla Public License, v. 2.0. If a  copy of the MPL was not distributed
+   with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+   ------------------------------------------------------------------------ */
+
+    
+// ============================================================================ 
+
+package org.genivi.hmiappfw.popupmanager.service
+
+// ============================================================================ 
+typeCollection Types {
+                <** @description : The enumeration of pop-up overlay modalities.
+                Note: The enumeration values shall be accessible via its own enumeration scope (e.g. class, namespace). **>
+        enumeration Modality {
+                <** @description: Indicates a non-modal surface. **>
+                None
+                <** @description: Indicates an application-modal surface. User interaction is application-wide only possible with the regarding surface. User interaction with other applications is not affected. **>
+                Application
+                <** @description: Indicates a system-modal surface. User interaction is system-wide only possible with the regarding surface. **>
+                System
+        }
+
+        <** @description :
+                The enumeration of alignment values intended to use for horizontal and vertical alignment attributes. 
+                Note: The enumeration values shall be accessible via its own enumeration scope (e.g. class, namespace). **>
+        enumeration HorizontalAlignment {
+                <** @description:
+                        Align elements to left side of the parent element. **>
+                Left
+                <** @description:
+                        Align elements to the center of the parent element. **>
+                Center
+                <** @description:
+                        Align elements to right side of the parent element. **>
+                Right
+        }
+
+        <** @description :
+                The enumeration of alignment values intended to use for horizontal and vertical alignment attributes.
+                Note: The enumeration values shall be accessible via its own enumeration scope (e.g. class, namespace). **>
+        enumeration VerticalAlignment {
+                <** @description:
+                        Align elements to top of the parent element. **>
+                Top
+                <** @description:
+                        Align elements to the center of the parent element. **>
+                Center
+                <** @description:
+                        Align elements to the bottom of the parent element. **>
+                Bottom
+        }
+
+        <** @description :
+                The enumeration of scaling configuration values intended to use for element scaling attributes.
+                Note: The enumeration values shall be accessible via its own enumeration scope (e.g. class, namespace). **>
+        enumeration Scaling {
+                <** @description:
+                        Indicates that no scaling shall be performed. **>
+                None
+                <** @description:
+                        Indicates that the element shall be scaled to fully cover to it's parent element by maintaining the aspect ratio of the element. The element is scaled in a way that one dimension matches the size of the corresponding parent element while the other dimension of the element may be larger than the corresponding parent element size. **>
+                Cut
+                <** @description:
+                        Indicates that the element shall be scaled to fit to it's parent element by maintaining the aspect ratio of the element. The element is scaled in a way that one dimension matches the size of the corresponding parent element while the other dimension of the element may be less than the corresponding parent element size. **>
+                Fit
+                <** @description:
+                        Indicates that the element shall be scaled to the dimension of it's parent element without maintaining the aspect ratio of the element. **>
+                Stretch
+        }
+
+        <** @description :
+                The enumeration of surface states.
+                Note: The enumeration values shall be accessible via its own enumeration scope (e.g. class, namespace). **>
+        enumeration SurfaceState {
+                <** @description:
+                        Indicates that the surface has been removed from presentation queue. **>
+                Unqueued
+                <** @description:
+                        Indicates that the surface is queued for later presentation. **>
+                Queued
+                <** @description:
+                        Indicates that the surface is unmapped and not shown on screen. **>
+                Unmapped
+                <** @description:
+                        Indicates that the surface is mapped and shown on screen. **>
+                Mapped
+        }
+}
+
+typeCollection Arguments {
+        <** @description :
+                This class encapsulates standard arguments for ScreenBroker requests. **>
+        struct RequestArg {
+                <** @description :
+                        The application specific ID of the request. If a corresponding response is sent back, the request ID of the response matches this argument. **>
+                UInt32 requestId
+                <** @description :
+                        The application specific ID. This ID is intended to identify the application at project specific plug-ins. It is neither processed nor modified within generic ScreenBroker implementation. **>
+                UInt32 appId
+                <** @description :
+                        The application specific data intended for extra tagging or hinting for request processing by project specific plug-ins. This value is neither processed nor modified within generic ScreenBroker implementation. **>
+                UInt32 userData
+        }
+
+        <** @description :
+                This class encapsulates arguments for ScreenBroker responses providing dimensions. **>
+        struct DimensionArg {
+                <** @description:
+                        The horizontal dimension value. **>
+                UInt32 width
+                <** @description:
+                        The vertical dimension value. **>
+                UInt32 height
+        }
+
+        <** @description : This class encapsulates arguments for ScreenBroker requests involving presesntation arguments for pop-up overlays. **>
+        struct PopupPresentationArg {
+                <** @description : The priority of the pop-up. **>
+                UInt32 priority
+                <** @description : The modality of the pop-up. **>
+                Types.Modality modality
+                <** @description : The optional time period after which the pop-up is hidded automatically. **>
+                UInt32 presentationTime
+                <** @description : The optional time period for which a pop-up shall be at least be visible. **>
+                UInt32 minimumPresentationTime
+                <** @description : The optional time period after which a not presented pop-up is discarded. **>
+                UInt32 validityPeriod
+                <** @description : The optional horizontal alignment attribute of surface on the screen area. **>
+                Types.HorizontalAlignment horizontalAlignment
+                <** @description : The optional vertical alignment attribute of surface on the screen area. **>
+                Types.VerticalAlignment verticalAlignment
+                <** @description : The optional scaling attribute of surface on the screen area. **>
+                Types.Scaling scaling
+        }
+}
+	
+// ============================================================================ 
+interface org.genivi.hmiappfw.popupmanager.service {
+	version {
+		major 0
+		minor 1
+	}
+
+	// ------------------------------------------------------------------------ 
+	attribute String Version readonly noSubscriptions
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		Informs service about a client shutdown. **>
+	method ClientTermination {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+		}
+		
+		out {
+			<** @description : 
+				Informs if the client shutdown has succeeded. **>
+			Boolean success
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		Requests the alpha-numerical ID (name) of the display the addressed screen area is configured to. 
+		Requested values are provided by response "OnGetDisplayId". **>
+	method GetDisplayId fireAndForget {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (will be returned unmodified to client in response). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				ID of screen area, for which the request is issued. **>
+			UInt32 screenAreaId
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		Requests the dimensions a "full area surface" should have to fit to the screen area identified by "screenAreaId". 
+		Requested values are provided by response "OnGetPreferredDimensions". **>
+	method GetPreferredDimensions fireAndForget {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (will be returned unmodified to client in response). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				ID of screen area, for which the request is issued. **>
+			UInt32 screenAreaId
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		Registers the ILM surface addressed by "surfaceId" to the screen area addressed by "screenAreaId". 
+		Surface specific hinting information is provided in field "userData" **>
+	method RegisterSurface fireAndForget {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (will be returned unmodified to client in response). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				The ID of the screen area to address. **>
+			UInt32 screenAreaId
+			
+			<** @description : 
+				The ID of the surface to address. **>
+			UInt32 surfaceId
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		Requests the activation of the requesting client application and applies the keyboard focus to the surface addressed by "surfaceId". 
+		Activation status is provided by response "OnActivateApplication". **>
+	method ActivateApplication fireAndForget {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (will be returned unmodified to client in response). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				The ID of the surface to address. **>
+			UInt32 surfaceId
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : Requests the presentation of the surface pop-up overlay addressed by "surfaceId". The surface must be registered on a screen area dedicated for pop-ups in order to be presented as pop-up. Additional arguments are passed to activator plug-ins. **>
+	method ShowPopup {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (will be returned unmodified to client in response). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				The ID of the surface to address. **>
+			UInt32 surfaceId
+			
+			<** @description : 
+				The presentation arguments for pop-up overlays. **>
+			Arguments.PopupPresentationArg popupPresentationArg
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : Requests the concealing of the surface pop-up overlay addressed by "surfaceId". **>
+	method HidePopup {
+		in {
+			<** @description : 
+				Unique client identification, identifies the sender of the request. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (will be returned unmodified to client in response). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				The ID of the surface to address. **>
+			UInt32 surfaceId
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		The response to "DisplayIdReq" request providing the requested display ID (name). **>
+	broadcast OnGetDisplayId {
+		out {
+			<** @description : 
+				Unique client identification, identifies the receiver of the response. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (unmodified client request information). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				The display ID, where the screen area (from request) is linked to. **>
+			UInt32 displayId
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		The response to "PreferredDimensionsReq" request providing the requested dimensions (width/height). **>
+	broadcast OnGetPreferredDimensions {
+		out {
+			<** @description : 
+				Unique client identification, identifies the receiver of the response. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (unmodified client request information). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				The dimensions of the screen area (from request). **>
+			Arguments.DimensionArg dimensionArg		
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		Notifies clients that the state of the indicated surface has changed. **>
+	broadcast OnSurfaceStateChanged {
+		out {
+			<** @description : 
+				Unique client identification, identifies the receiver of the response. **>
+			String clientId
+			
+			<** @description: 
+				The user defined data. **>
+			UInt32 userData
+
+			<** @description : 
+				The ID of the affected surface. **>
+			UInt32 surfaceId
+			
+			<** @description : 
+				The new state of the surface. **>
+			Types.SurfaceState surfaceState
+		}
+	}
+
+	// ------------------------------------------------------------------------ 
+	<** @description : 
+		The error response to any failed request providing information about the error. **>
+	broadcast OnError {
+		out {
+			<** @description : 
+				Unique client identification, identifies the receiver of the response. **>
+			String clientId
+			
+			<** @description : 
+				General application specific request information (unmodified client request information). **>
+			Arguments.RequestArg requestArg
+
+			<** @description : 
+				System error codes (like linux extended error codes defined in linux/errno.h). **>
+			Int32 systemErrno
+
+			<** @description :
+				Error codes specific to the visual presentation module screen broker is connected to (e.g. layer manager). **>
+			Int32 presentationErrno
+		}
+	}
+}

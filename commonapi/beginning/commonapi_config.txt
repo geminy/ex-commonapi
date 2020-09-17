@@ -1,0 +1,121 @@
+commonapi dbus config
+
+reference:
+	https://github.com/gunnarx/build-common-api-cpp-native/blob/master/build-commonapi.sh
+	https://genivi-oss.atlassian.net/wiki/pages/viewpage.action?pageId=5472316
+
+0. 从安装目录开始
+cd 安装目录
+BASEDIR=$PWD
+
+1. 安装依赖
+sudo apt-get install expat-devel -y
+sudo apt-get install cmake -y
+sudo apt-get install gcc -y
+sudo apt-get install gcc-c++ -y
+sudo apt-get install automake -y
+sudo apt-get install autoconf -y
+
+2. 安装common api runtime
+cd $BASEDIR
+git clone http://git.projects.genivi.org/ipc/common-api-runtime.git
+mkdir common-api-runtime/build
+cd common-api-runtime/build
+cmake -D CMAKE_INSTALL_PREFIX=/usr/local ..
+make -j4
+>>当前目录下生成了libCommonAPI.so
+sudo make install
+>>lib和include安装到了/usr/local目录
+
+3. 安装common api dbus runtime
+cd $BASEDIR
+git clone http://git.projects.genivi.org/ipc/common-api-dbus-runtime.git
+wget -c http://dbus.freedesktop.org/releases/dbus/dbus-1.8.20.tar.gz
+tar -xzvf dbus-1.8.20.tar.gz
+cd dbus-1.8.20
+patch -p1 < ../common-api-dbus-runtime/src/dbus-patches/capi-dbus-add-send-with-reply-set-notify.patch
+patch -p1 < ../common-api-dbus-runtime/src/dbus-patches/capi-dbus-add-support-for-custom-marshalling.patch
+patch -p1 < ../common-api-dbus-runtime/src/dbus-patches/capi-dbus-correct-dbus-connection-block-pending-call.patch
+./configure --prefix=/usr
+make -j4
+>>在dbus/.libs目录下生成了libdbus-1.so等文件
+sudo make install
+>>lib安装到了/usr/lib目录
+cd $BASEDIR
+mkdir common-api-dbus-runtime/build
+cd common-api-dbus-runtime/build
+export PKG_CONFIG_PATH="/home/hanjunjie/more/nepartak/commonapi/dbus-1.8.20:PKG_CONFIG_PATH"
+cmake -D USE_INSTALLED_COMMONAPI=OFF -D USE_INSTALLED_DBUS=OFF -D CMAKE_INSTALL_PREFIX=/usr/local ..
+make -j4
+>>当前目录下生成了libCommonAPI-DBus.so
+sudo make install
+>>lib和include安装到了/usr/local目录
+
+4. 安装idl generator
+cd $BASEDIR
+mkdir -p project/cgen
+cd project/cgen
+wget http://docs.projects.genivi.org/yamaica-update-site/CommonAPI/generator/3.1/3.1.5p2/commonapi-generator.zip
+wget http://docs.projects.genivi.org/yamaica-update-site/CommonAPI/generator/3.1/3.1.5p2/commonapi_dbus_generator.zip
+unzip commonapi-generator.zip -d commonapi-generator
+unzip commonapi_dbus_generator.zip -d commonapi_dbus_generator
+chmod +x ./commonapi-generator/commonapi-generator-linux-x86_64
+chmod +x ./commonapi_dbus_generator/commonapi-dbus-generator-linux-x86_64
+
+5. HelloWorld.fidl
+cd $BASEDIR
+mkdir -p project/fidl
+cp HelloWorld.fidl project/fidl/
+
+6. 使用idl generator
+cd $BASEDIR
+cd project
+./cgen/commonapi-generator/commonapi-generator-linux-x86_64 -sk ./fidl/HelloWorld.fidl
+>>当前目录下生成了如下文件
+src-gen/
+└── v1
+    └── commonapi
+        ├── HelloWorld.hpp
+        ├── HelloWorldProxyBase.hpp
+        ├── HelloWorldProxy.hpp
+        ├── HelloWorldStubDefault.cpp
+        ├── HelloWorldStubDefault.hpp
+        └── HelloWorldStub.hpp
+./cgen/commonapi_dbus_generator/commonapi-dbus-generator-linux-x86_64 ./fidl/HelloWorld.fidl
+>>src-gen目录添加了一些文件
+src-gen/
+└── v1
+    └── commonapi
+        ├── HelloWorldDBusDeployment.cpp
+        ├── HelloWorldDBusDeployment.hpp
+        ├── HelloWorldDBusProxy.cpp
+        ├── HelloWorldDBusProxy.hpp
+        ├── HelloWorldDBusStubAdapter.cpp
+        ├── HelloWorldDBusStubAdapter.hpp
+        ├── HelloWorld.hpp
+        ├── HelloWorldProxyBase.hpp
+        ├── HelloWorldProxy.hpp
+        ├── HelloWorldStubDefault.cpp
+        ├── HelloWorldStubDefault.hpp
+        └── HelloWorldStub.hpp
+
+7. Source
+cd $BASEDIR
+mkdir -p project/src
+cp HelloWorldClient.cpp project/src/
+cp HelloWorldService.cpp project/src/
+cp HelloWorldStubImpl.hpp project/src/
+cp HelloWorldStubImpl.cpp project/src/
+
+8. CMake
+cd $BASEDIR
+cp CMakeLists.txt project/
+mkdir -p project/build
+cd project/build
+cmake ..
+make -j4
+
+9. 运行
+./HelloWorldService &
+./HelloWorldClient
+辅助命令: bg fg
